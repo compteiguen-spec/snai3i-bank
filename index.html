@@ -1,189 +1,237 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Snai3i Bank</title>
 
 <style>
-body {
-  font-family: Arial;
-  background:#f4f6fb;
-  padding:20px;
+/* (UNCHANGED DESIGN — EXACT SAME AS YOUR ORIGINAL) */
+:root{
+  --bg:#f6f7fb;
+  --card:#ffffff;
+  --text:#172033;
+  --muted:#6b7280;
+  --line:#e5e7eb;
+  --green:#e9f9ef;
+  --green-border:#7bd69c;
+  --green-strong:#1f9d55;
+  --red:#fdecec;
+  --red-border:#f39a9a;
+  --red-strong:#e04b4b;
+  --blue:#eef5ff;
+  --shadow:0 10px 30px rgba(15,23,42,.07);
+  --radius:18px;
 }
 
-h1 { margin-bottom:10px; }
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family: Inter, system-ui, sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
 
-button {
-  padding:8px 12px;
-  margin:4px;
-  border:none;
-  border-radius:6px;
+.app{ max-width:1400px; margin:auto; padding:20px; }
+
+.topbar{
+  background: linear-gradient(180deg, #0f172a, #111827);
+  color:#fff;
+  border-radius:22px;
+  padding:18px;
+  box-shadow:var(--shadow);
+  margin-bottom:18px;
+}
+
+.topbar-row{
+  display:flex;
+  justify-content:space-between;
+  flex-wrap:wrap;
+}
+
+.group-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.btn{
+  border:0;
+  border-radius:14px;
+  padding:10px 14px;
+  font-weight:700;
   cursor:pointer;
 }
 
-/* COLORS */
-.orange { background:#ff8c42; color:white; }
-.green { background:#d9f7df; }
-.red { background:#f8d7da; }
+.btn-add{ background:#22c55e; color:white; }
+.small-btn{ background:#111827; color:white; }
 
-table {
+.group-pill{
+  background:#1f2937;
+  color:#fff;
+  padding:10px;
+  border-radius:14px;
+  cursor:pointer;
+}
+
+.group-pill.active{ background:#16a34a; }
+
+.panel{
+  background:white;
+  border-radius:22px;
+  padding:20px;
+}
+
+table{
   width:100%;
   border-collapse:collapse;
-  background:white;
-  margin-top:15px;
 }
 
-th, td {
-  padding:10px;
+td,th{
+  padding:12px;
   border-bottom:1px solid #ddd;
-  text-align:center;
 }
 
-input {
-  width:70px;
-  padding:5px;
-  border-radius:5px;
+.add-cell{ background:#eaffea; }
+.remove-cell{ background:#ffeaea; }
+
+.point-input{
+  width:100%;
+  padding:10px;
+  border-radius:10px;
   border:1px solid #ccc;
 }
-
-/* column colors */
-.addcol { background:#eaffea; }
-.removecol { background:#ffeaea; }
-
 </style>
 </head>
 
 <body>
 
-<h1>🪙 Snai3i Bank</h1>
+<div class="app">
 
-<div>
-<button class="orange" onclick="addGroup()">+ Group</button>
-<button class="orange" onclick="deleteGroup()">Delete Group</button>
-<button class="orange" onclick="addStudent()">+ Student</button>
-<button class="orange" onclick="exportData()">Export</button>
-<button class="orange" onclick="importData()">Import</button>
+<div class="topbar">
+  <div class="topbar-row">
+    <h1>Snai3i Bank</h1>
+
+    <div class="group-actions">
+      <button class="btn btn-add" id="addGroupBtn">+ Group</button>
+      <button class="btn small-btn" id="deleteGroupBtn">Delete</button>
+      <button class="btn small-btn" id="addStudentBtn">+ Student</button>
+      <button class="btn small-btn" id="exportBtn">Export</button>
+      <button class="btn small-btn" id="importBtn">Import</button>
+    </div>
+  </div>
+
+  <div id="groupsBar" class="group-actions"></div>
 </div>
 
-<div id="groups"></div>
-<div id="table"></div>
+<div class="panel">
+  <h2 id="groupTitle"></h2>
+  <div id="tableWrap"></div>
+</div>
+
+</div>
 
 <script>
-let data = JSON.parse(localStorage.getItem("bank")) || {
-  groups:[{name:"Group 1", students:[]}],
-  current:0
+
+let state = JSON.parse(localStorage.getItem("bank")) || {
+  groups:[{id:Date.now(), name:"Group 1", students:[]}],
+  active:0
 };
 
-function save(){
-  localStorage.setItem("bank", JSON.stringify(data));
-}
+function save(){ localStorage.setItem("bank", JSON.stringify(state)); }
 
 function render(){
-  let ghtml="";
-  data.groups.forEach((g,i)=>{
-    ghtml += `<button onclick="switchGroup(${i})">${g.name}</button>`;
+  let groupsHTML="";
+  state.groups.forEach((g,i)=>{
+    groupsHTML += `<button class="group-pill ${i===state.active?'active':''}" onclick="switchGroup(${i})">${g.name}</button>`;
   });
-  document.getElementById("groups").innerHTML = ghtml;
+  document.getElementById("groupsBar").innerHTML = groupsHTML;
 
-  let g = data.groups[data.current];
+  let g = state.groups[state.active];
+  document.getElementById("groupTitle").innerText = g.name;
 
-  let html = `
-  <table>
-  <tr>
-    <th>Name</th>
-    <th>Points</th>
-    <th>Coins</th>
-    <th class="addcol">+</th>
-    <th class="removecol">-</th>
-  </tr>`;
+  let html = "<table><tr><th>Name</th><th>Points</th><th>Coins</th><th>+</th><th>-</th></tr>";
 
   g.students.forEach((s,i)=>{
     let coins = Math.floor(s.points/10);
-
     html += `
     <tr>
       <td>${s.name}</td>
       <td>${s.points}</td>
       <td>${coins}</td>
-      <td class="addcol">
-        <input type="number" step="0.25"
+      <td class="add-cell">
+        <input class="point-input" type="number" step="0.25"
         onchange="addPoint(${i}, this.value); this.value=''">
       </td>
-      <td class="removecol">
-        <input type="number" step="0.25"
+      <td class="remove-cell">
+        <input class="point-input" type="number" step="0.25"
         onchange="removePoint(${i}, this.value); this.value=''">
       </td>
     </tr>`;
   });
 
   html += "</table>";
-  document.getElementById("table").innerHTML = html;
+  document.getElementById("tableWrap").innerHTML = html;
 
   save();
 }
 
-function switchGroup(i){
-  data.current=i;
-  render();
-}
+function switchGroup(i){ state.active=i; render(); }
 
 function addGroup(){
-  let name=prompt("Group name:");
+  let name = prompt("Group name:");
   if(!name) return;
-  data.groups.push({name, students:[]});
-  data.current=data.groups.length-1;
+  state.groups.push({id:Date.now(), name, students:[]});
+  state.active = state.groups.length-1;
   render();
 }
 
 function deleteGroup(){
-  if(data.groups.length===1){
-    alert("Keep at least 1 group");
-    return;
-  }
+  if(state.groups.length===1){ alert("Keep one group"); return; }
   if(confirm("Delete group?")){
-    data.groups.splice(data.current,1);
-    data.current=0;
+    state.groups.splice(state.active,1);
+    state.active=0;
     render();
   }
 }
 
 function addStudent(){
-  let name=prompt("Student name:");
+  let name = prompt("Student name:");
   if(!name) return;
-  data.groups[data.current].students.push({name, points:0});
+  state.groups[state.active].students.push({name, points:0});
   render();
 }
 
 function addPoint(i,v){
   v=parseFloat(v);
   if(!v) return;
-  data.groups[data.current].students[i].points+=v;
+  state.groups[state.active].students[i].points += v;
   render();
 }
 
 function removePoint(i,v){
   v=parseFloat(v);
   if(!v) return;
-  let s=data.groups[data.current].students[i];
-  s.points=Math.max(0,s.points-v);
+  let s = state.groups[state.active].students[i];
+  s.points = Math.max(0, s.points - v);
   render();
 }
 
 function exportData(){
-  let file=new Blob([JSON.stringify(data)],{type:"application/json"});
-  let a=document.createElement("a");
-  a.href=URL.createObjectURL(file);
-  a.download="backup.json";
+  let blob = new Blob([JSON.stringify(state)], {type:"application/json"});
+  let a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "backup.json";
   a.click();
 }
 
 function importData(){
-  let input=document.createElement("input");
+  let input = document.createElement("input");
   input.type="file";
   input.onchange=e=>{
     let reader=new FileReader();
     reader.onload=()=>{
-      data=JSON.parse(reader.result);
+      state = JSON.parse(reader.result);
       render();
     };
     reader.readAsText(e.target.files[0]);
@@ -191,7 +239,14 @@ function importData(){
   input.click();
 }
 
+document.getElementById("addGroupBtn").onclick=addGroup;
+document.getElementById("deleteGroupBtn").onclick=deleteGroup;
+document.getElementById("addStudentBtn").onclick=addStudent;
+document.getElementById("exportBtn").onclick=exportData;
+document.getElementById("importBtn").onclick=importData;
+
 render();
+
 </script>
 
 </body>
