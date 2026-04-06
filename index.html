@@ -3,33 +3,74 @@
 <head>
 <meta charset="utf-8">
 <title>Snai3i Bank</title>
+
 <style>
-body { font-family: Arial; background:#f5f5f5; padding:20px; }
-button { margin:5px; padding:8px 12px; cursor:pointer; }
-.add { background:#d4f8d4; }
-.remove { background:#f8d4d4; }
-table { width:100%; background:#fff; border-collapse:collapse; margin-top:20px; }
-td,th { padding:10px; border:1px solid #ddd; text-align:center; }
-input { width:70px; padding:5px; }
+body {
+  font-family: Arial;
+  background:#f4f6fb;
+  padding:20px;
+}
+
+h1 { margin-bottom:10px; }
+
+button {
+  padding:8px 12px;
+  margin:4px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+/* COLORS */
+.orange { background:#ff8c42; color:white; }
+.green { background:#d9f7df; }
+.red { background:#f8d7da; }
+
+table {
+  width:100%;
+  border-collapse:collapse;
+  background:white;
+  margin-top:15px;
+}
+
+th, td {
+  padding:10px;
+  border-bottom:1px solid #ddd;
+  text-align:center;
+}
+
+input {
+  width:70px;
+  padding:5px;
+  border-radius:5px;
+  border:1px solid #ccc;
+}
+
+/* column colors */
+.addcol { background:#eaffea; }
+.removecol { background:#ffeaea; }
+
 </style>
 </head>
 
 <body>
 
-<h2>Snai3i Bank</h2>
+<h1>🪙 Snai3i Bank</h1>
 
-<button onclick="addGroup()">+ Add Group</button>
-<button onclick="deleteGroup()">🗑 Delete Group</button>
-<button onclick="addStudent()">+ Add Student</button>
-<button onclick="exportData()">⬇ Export</button>
-<button onclick="importData()">⬆ Import</button>
+<div>
+<button class="orange" onclick="addGroup()">+ Group</button>
+<button class="orange" onclick="deleteGroup()">Delete Group</button>
+<button class="orange" onclick="addStudent()">+ Student</button>
+<button class="orange" onclick="exportData()">Export</button>
+<button class="orange" onclick="importData()">Import</button>
+</div>
 
 <div id="groups"></div>
 <div id="table"></div>
 
 <script>
 let data = JSON.parse(localStorage.getItem("bank")) || {
-  groups: [{name:"Group 1", students:[]}],
+  groups:[{name:"Group 1", students:[]}],
   current:0
 };
 
@@ -38,14 +79,13 @@ function save(){
 }
 
 function render(){
-  // groups
   let ghtml="";
   data.groups.forEach((g,i)=>{
     ghtml += `<button onclick="switchGroup(${i})">${g.name}</button>`;
   });
   document.getElementById("groups").innerHTML = ghtml;
 
-  let group = data.groups[data.current];
+  let g = data.groups[data.current];
 
   let html = `
   <table>
@@ -53,11 +93,11 @@ function render(){
     <th>Name</th>
     <th>Points</th>
     <th>Coins</th>
-    <th class="add">+</th>
-    <th class="remove">-</th>
+    <th class="addcol">+</th>
+    <th class="removecol">-</th>
   </tr>`;
 
-  group.students.forEach((s,i)=>{
+  g.students.forEach((s,i)=>{
     let coins = Math.floor(s.points/10);
 
     html += `
@@ -65,11 +105,11 @@ function render(){
       <td>${s.name}</td>
       <td>${s.points}</td>
       <td>${coins}</td>
-      <td class="add">
+      <td class="addcol">
         <input type="number" step="0.25"
         onchange="addPoint(${i}, this.value); this.value=''">
       </td>
-      <td class="remove">
+      <td class="removecol">
         <input type="number" step="0.25"
         onchange="removePoint(${i}, this.value); this.value=''">
       </td>
@@ -83,71 +123,70 @@ function render(){
 }
 
 function switchGroup(i){
-  data.current = i;
+  data.current=i;
   render();
 }
 
 function addGroup(){
-  let name = prompt("Group name:");
+  let name=prompt("Group name:");
   if(!name) return;
   data.groups.push({name, students:[]});
-  data.current = data.groups.length-1;
+  data.current=data.groups.length-1;
   render();
 }
 
 function deleteGroup(){
-  if(data.groups.length === 1){
-    alert("You must keep at least one group");
+  if(data.groups.length===1){
+    alert("Keep at least 1 group");
     return;
   }
-  if(confirm("Delete this group?")){
+  if(confirm("Delete group?")){
     data.groups.splice(data.current,1);
-    data.current = 0;
+    data.current=0;
     render();
   }
 }
 
 function addStudent(){
-  let name = prompt("Student name:");
+  let name=prompt("Student name:");
   if(!name) return;
   data.groups[data.current].students.push({name, points:0});
   render();
 }
 
-function addPoint(i,val){
-  val = parseFloat(val);
-  if(!val) return;
-  data.groups[data.current].students[i].points += val;
+function addPoint(i,v){
+  v=parseFloat(v);
+  if(!v) return;
+  data.groups[data.current].students[i].points+=v;
   render();
 }
 
-function removePoint(i,val){
-  val = parseFloat(val);
-  if(!val) return;
-  let s = data.groups[data.current].students[i];
-  s.points = Math.max(0, s.points - val);
+function removePoint(i,v){
+  v=parseFloat(v);
+  if(!v) return;
+  let s=data.groups[data.current].students[i];
+  s.points=Math.max(0,s.points-v);
   render();
 }
 
 function exportData(){
-  let file = new Blob([JSON.stringify(data)], {type:"application/json"});
-  let a = document.createElement("a");
-  a.href = URL.createObjectURL(file);
-  a.download = "snai3i-backup.json";
+  let file=new Blob([JSON.stringify(data)],{type:"application/json"});
+  let a=document.createElement("a");
+  a.href=URL.createObjectURL(file);
+  a.download="backup.json";
   a.click();
 }
 
 function importData(){
-  let input = document.createElement("input");
-  input.type = "file";
-  input.onchange = e => {
-    let file = e.target.files[0];
-    let reader = new FileReader();
-    reader.onload = () => {
-      data = JSON.parse(reader.result);
+  let input=document.createElement("input");
+  input.type="file";
+  input.onchange=e=>{
+    let reader=new FileReader();
+    reader.onload=()=>{
+      data=JSON.parse(reader.result);
       render();
     };
-    reader.readAsText(file);
+    reader.readAsText(e.target.files[0]);
   };
   input.click();
 }
